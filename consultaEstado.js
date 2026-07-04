@@ -1,110 +1,100 @@
 /**
  * FRONTEND - Consulta de estado de inscripción por DNI
- *
- * IMPORTANTE:
- * - Reemplaza WEB_APP_URL con la URL de tu Web App de Apps Script
- *   (Deploy > New deployment > Web app > acceso: Cualquiera)
- * - SECRET_TOKEN debe ser EXACTAMENTE igual al que guardaste con
- *   configurarTokenSecreto() en Code.gs
- * - Se usa content-type "text/plain" a propósito para evitar el preflight
- *   OPTIONS que Apps Script no maneja bien con CORS.
- *
- * NOTA DE SEGURIDAD: este token viaja en el JS público del front (GitHub),
- * así que cualquier persona técnica puede verlo inspeccionando el código.
- * No es una barrera infranqueable, es una capa más que filtra bots genéricos.
- * La protección real está en el backend (rate limit, bloqueo progresivo, delay).
+ * Corregido para calzar con los IDs reales de consultaEstado.html
  */
-
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzS2TRJ0cRGTaEqmfz3QwredlBMWyCpbSB88MHKgdp-ubaNVFYGpouv_0Cj7gyhVYYU/exec';
-const SECRET_TOKEN = 'expobio-tock-lokifjadsfjkpeourls34123412345n2jhdf'; // igual que en configurarTokenSecreto()
+const SECRET_TOKEN = 'expobio-tock-lokifjadsfjkpeourls34123412345n2jhdf';
 
 async function consultarEstado(dni) {
-  // Validación básica en el front (no reemplaza la del back, solo evita
-  // requests innecesarios)
   if (!/^\d{8}$/.test(dni)) {
     return { ok: false, mensaje: 'Ingresa un DNI válido de 8 dígitos' };
   }
-
   try {
     const response = await fetch(WEB_APP_URL, {
       method: 'POST',
-      redirect: 'follow', // sigue el redirect interno de Apps Script explícitamente
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8' // evita preflight CORS
-      },
-      body: JSON.stringify({
-        dni: dni,
-        token: SECRET_TOKEN
-      })
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ dni, token: SECRET_TOKEN })
     });
 
-    // ==================== DIAGNÓSTICO TEMPORAL ====================
-    // Log completo para saber exactamente qué está devolviendo el servidor.
-    // Quitar estos console.log cuando ya funcione todo.
-    console.log('Status:', response.status);
-    console.log('OK:', response.ok);
-    console.log('Content-Type:', response.headers.get('content-type'));
-
     const rawText = await response.text();
-    console.log('Respuesta cruda:', rawText);
-
     let data;
     try {
       data = JSON.parse(rawText);
     } catch (parseErr) {
-      console.error('No se pudo parsear como JSON:', parseErr);
-      return {
-        ok: false,
-        mensaje: 'El servidor no devolvió JSON válido (revisa la consola)',
-        debug: rawText.substring(0, 300)
-      };
+      console.error('No se pudo parsear como JSON:', parseErr, rawText);
+      return { ok: false, mensaje: 'El servidor no devolvió JSON válido' };
     }
-    // ==================== FIN DIAGNÓSTICO TEMPORAL ====================
-
     return data;
-
   } catch (err) {
     console.error('Error de fetch:', err);
-    return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo', debug: String(err) };
+    return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo' };
   }
 }
 
-// ==================== EJEMPLO DE USO EN EL FORM ====================
-// Ajusta los IDs según lo que tu amigo tenga en el HTML del front.
+function ocultarTodosLosResultados() {
+  ['resultado-bien', 'resultado-mal', 'resultado-pendiente', 'resultado-no-existe']
+    .forEach(id => document.getElementById(id).classList.remove('visible'));
+}
+
+function mostrarResultado(data) {
+  ocultarTodosLosResultados();
+
+  const mensajeForm = document.getElementById('mensaje-form');
+  mensajeForm.className = '';
+  mensajeForm.style.display = 'none';
+
+  if (!data.encontrado) {
+    document.getElementById('resultado-no-existe').classList.add('visible');
+    return;
+  }
+
+  const estado = String(data.estado || '').toLowerCase();
+
+  if (estado === 'aprobado') {
+    document.getElementById('nombre-bien').textContent = data.nombres || '';
+    document.getElementById('resultado-bien').classList.add('visible');
+  } else if (estado === 'rechazado') {
+    document.getElementById('nombre-mal').textContent = data.nombres || '';
+    document.getElementById('motivo-mal').textContent =
+      'Motivo: ' + (data.motivoRechazo || 'No especificado');
+    document.getElementById('resultado-mal').classList.add('visible');
+  } else {
+    // pendiente o cualquier otro estado
+    document.getElementById('nombre-pendiente').textContent = data.nombres || '';
+    document.getElementById('resultado-pendiente').classList.add('visible');
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('form-consulta');
-  const inputDni = document.getElementById('input-dni');
-  const resultadoDiv = document.getElementById('resultado');
-  const botonSubmit = form ? form.querySelector('button[type="submit"]') : null;
+  const form = document.getElementById('formConsulta');
+  const inputDni = document.getElementById('dniConsulta');
+  const mensajeForm = document.getElementById('mensaje-form');
+  const botonSubmit = form ? form.querySelector('.btn-consultar') : null;
 
   if (!form) return;
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const dni = inputDni.value.trim();
-    resultadoDiv.textContent = 'Consultando...';
+    ocultarTodosLosResultados();
+    mensajeForm.className = '';
+    mensajeForm.textContent = 'Consultando...';
+    mensajeForm.style.display = 'block';
     if (botonSubmit) botonSubmit.disabled = true;
 
+    const dni = inputDni.value.trim();
     const data = await consultarEstado(dni);
 
     if (botonSubmit) botonSubmit.disabled = false;
 
     if (!data.ok) {
-      resultadoDiv.textContent = data.mensaje;
+      mensajeForm.className = 'error';
+      mensajeForm.textContent = data.mensaje;
       return;
     }
 
-    if (!data.encontrado) {
-      resultadoDiv.textContent = 'No encontramos una inscripción con ese DNI.';
-      return;
-    }
-
-    let mensaje = `Estado: ${data.estado}`;
-    if (data.estado === 'rechazado' && data.motivoRechazo) {
-      mensaje += ` — Motivo: ${data.motivoRechazo}`;
-    }
-    resultadoDiv.textContent = mensaje;
+    mensajeForm.style.display = 'none';
+    mostrarResultado(data);
   });
 });
