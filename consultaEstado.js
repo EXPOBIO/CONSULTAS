@@ -15,7 +15,7 @@
  * La protección real está en el backend (rate limit, bloqueo progresivo, delay).
  */
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzS2TRJ0cRGTaEqmfz3QwredlBMWyCpbSB88MHKgdp-ubaNVFYGpouv_0Cj7gyhVYYU/exec';
 const SECRET_TOKEN = 'MI_TOKEN_SECRETO_AQUI'; // igual que en configurarTokenSecreto()
 
 async function consultarEstado(dni) {
