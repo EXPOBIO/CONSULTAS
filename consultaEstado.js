@@ -16,7 +16,7 @@
  */
 
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzS2TRJ0cRGTaEqmfz3QwredlBMWyCpbSB88MHKgdp-ubaNVFYGpouv_0Cj7gyhVYYU/exec';
-const SECRET_TOKEN = 'MI_TOKEN_SECRETO_AQUI'; // igual que en configurarTokenSecreto()
+const SECRET_TOKEN = 'expobio-tock-lokifjadsfjkpeourls34123412345n2jhdf'; // igual que en configurarTokenSecreto()
 
 async function consultarEstado(dni) {
   // Validación básica en el front (no reemplaza la del back, solo evita
