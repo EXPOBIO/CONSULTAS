@@ -13,130 +13,98 @@
  * así que cualquier persona técnica puede verlo inspeccionando el código.
  * No es una barrera infranqueable, es una capa más que filtra bots genéricos.
  * La protección real está en el backend (rate limit, bloqueo progresivo, delay).
- * Tengo fe de que no nos encuentra un bot :v
  */
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzS2TRJ0cRGTaEqmfz3QwredlBMWyCpbSB88MHKgdp-ubaNVFYGpouv_0Cj7gyhVYYU/exec';
-const SECRET_TOKEN = 'dfkjasdlñfkjapoeurpaksdcpoauewrpqdnclklshjdfd'; // igual que en configurarTokenSecreto()
+
+const WEB_APP_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID/exec';
+const SECRET_TOKEN = 'MI_TOKEN_SECRETO_AQUI'; // igual que en configurarTokenSecreto()
 
 async function consultarEstado(dni) {
-    // Validación básica en el front (no reemplaza la del back, solo evita
-    // requests innecesarios)
-    if (!/^\d{8}$/.test(dni)) {
-        return { ok: false, mensaje: 'Ingresa un DNI válido de 8 dígitos' };
-    }
-    try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8' // evita preflight CORS
-            },
-            body: JSON.stringify({
-                dni: dni,
-                token: SECRET_TOKEN
-            })
-        });
-        const data = await response.json();
-        return data;
-    } catch (err) {
-        return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo' };
-    }
-}
+  // Validación básica en el front (no reemplaza la del back, solo evita
+  // requests innecesarios)
+  if (!/^\d{8}$/.test(dni)) {
+    return { ok: false, mensaje: 'Ingresa un DNI válido de 8 dígitos' };
+  }
 
-// ==================== INTEGRACIÓN CON consultaEstado.html ====================
-
-const bloquesResultado = {
-    'aprobado': null,
-    'rechazado': null,
-    'pendiente': null,
-    'no-existe': null
-};
-
-let mensajeEl = null;
-
-function ocultarBloques() {
-    Object.values(bloquesResultado).forEach(function (b) {
-        if (b) b.classList.remove('visible');
+  try {
+    const response = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      redirect: 'follow', // sigue el redirect interno de Apps Script explícitamente
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8' // evita preflight CORS
+      },
+      body: JSON.stringify({
+        dni: dni,
+        token: SECRET_TOKEN
+      })
     });
-        if (mensajeEl) {
-            mensajeEl.className = '';
-            mensajeEl.textContent = '';
-        }
-}
 
-function mostrarBloque(clave) {
-    ocultarBloques();
-    const bloque = bloquesResultado[clave];
-    if (bloque) {
-        bloque.classList.add('visible');
-        bloque.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // ==================== DIAGNÓSTICO TEMPORAL ====================
+    // Log completo para saber exactamente qué está devolviendo el servidor.
+    // Quitar estos console.log cuando ya funcione todo.
+    console.log('Status:', response.status);
+    console.log('OK:', response.ok);
+    console.log('Content-Type:', response.headers.get('content-type'));
+
+    const rawText = await response.text();
+    console.log('Respuesta cruda:', rawText);
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      console.error('No se pudo parsear como JSON:', parseErr);
+      return {
+        ok: false,
+        mensaje: 'El servidor no devolvió JSON válido (revisa la consola)',
+        debug: rawText.substring(0, 300)
+      };
     }
+    // ==================== FIN DIAGNÓSTICO TEMPORAL ====================
+
+    return data;
+
+  } catch (err) {
+    console.error('Error de fetch:', err);
+    return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo', debug: String(err) };
+  }
 }
 
-function rellenarDatos(nombre, motivoRechazo) {
-    document.getElementById('nombre-bien').textContent = nombre;
-    document.getElementById('nombre-mal').textContent = nombre;
-    document.getElementById('nombre-pendiente').textContent = nombre;
-    document.getElementById('motivo-mal').textContent = 'Motivo: ' + (motivoRechazo || 'No especificado');
-}
-
-// Botones de "Vista previa" — quedan disponibles para seguir probando la UI
-// sin gastar cuota del backend real.
-function mostrarDemo(estado) {
-    const mapaDemo = { 'bien': 'aprobado', 'mal': 'rechazado', 'pendiente': 'pendiente', 'no-existe': 'no-existe' };
-    rellenarDatos('Kevin', 'El voucher subido no se alcanza a leer con claridad.');
-    mostrarBloque(mapaDemo[estado]);
-}
+// ==================== EJEMPLO DE USO EN EL FORM ====================
+// Ajusta los IDs según lo que tu amigo tenga en el HTML del front.
 
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('formConsulta');
-    const inputDni = document.getElementById('dniConsulta');
-    const botonSubmit = form ? form.querySelector('button[type="submit"]') : null;
+  const form = document.getElementById('form-consulta');
+  const inputDni = document.getElementById('input-dni');
+  const resultadoDiv = document.getElementById('resultado');
+  const botonSubmit = form ? form.querySelector('button[type="submit"]') : null;
 
-    mensajeEl = document.getElementById('mensaje-form');
-    bloquesResultado['aprobado'] = document.getElementById('resultado-bien');
-    bloquesResultado['rechazado'] = document.getElementById('resultado-mal');
-    bloquesResultado['pendiente'] = document.getElementById('resultado-pendiente');
-    bloquesResultado['no-existe'] = document.getElementById('resultado-no-existe');
+  if (!form) return;
 
-    if (!form) return;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const dni = inputDni.value.trim();
+    const dni = inputDni.value.trim();
+    resultadoDiv.textContent = 'Consultando...';
+    if (botonSubmit) botonSubmit.disabled = true;
 
-        ocultarBloques();
-        if (botonSubmit) {
-            botonSubmit.disabled = true;
-            botonSubmit.textContent = 'Consultando...';
-        }
+    const data = await consultarEstado(dni);
 
-        const data = await consultarEstado(dni);
+    if (botonSubmit) botonSubmit.disabled = false;
 
-        if (botonSubmit) {
-            botonSubmit.disabled = false;
-            botonSubmit.textContent = 'Consultar';
-        }
+    if (!data.ok) {
+      resultadoDiv.textContent = data.mensaje;
+      return;
+    }
 
-        if (!data.ok) {
-            mensajeEl.className = 'error';
-            mensajeEl.textContent = data.mensaje;
-            return;
-        }
+    if (!data.encontrado) {
+      resultadoDiv.textContent = 'No encontramos una inscripción con ese DNI.';
+      return;
+    }
 
-        if (!data.encontrado) {
-            mostrarBloque('no-existe');
-            return;
-        }
-
-        rellenarDatos(data.nombre || '', data.motivoRechazo);
-
-        const estado = (data.estado || '').toLowerCase();
-
-        if (estado === 'aprobado' || estado === 'rechazado' || estado === 'pendiente') {
-            mostrarBloque(estado);
-        } else {
-            mensajeEl.className = 'error';
-            mensajeEl.textContent = 'Estado desconocido recibido del servidor: ' + data.estado;
-        }
-    });
+    let mensaje = `Estado: ${data.estado}`;
+    if (data.estado === 'rechazado' && data.motivoRechazo) {
+      mensaje += ` — Motivo: ${data.motivoRechazo}`;
+    }
+    resultadoDiv.textContent = mensaje;
+  });
 });
