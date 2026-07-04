@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<base target="_top">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="consultaEstado.css">
+	<title>EXPOBIO 2026 · Estado de Inscripción</title>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+	<link rel="icon" type="image/png" sizes="32x32" href="https://files.catbox.moe/zftv8w.png">
+	<link rel="shortcut icon" href="https://files.catbox.moe/zftv8w.png">
+	<meta name="theme-color" content="#234F40">
+</head>
+
+<body>
+	<div class="carta">
+		<div class="box-titulo">
+			<img class="Escudo-UNSAAC" src="Logaso.png">
+		</div>
+	</div>
+
+	<div class="carta">
+		<button class="btn-volver-form" onclick="window.top.location.href='https://expobio.github.io/INSCRIPCION/'">← Volver</button>
+
+		<div class="form-titulo">
+			<h1>Estado de su Inscripción</h1>
+			<p>Ingrese el número de su DNI</p>
+		</div>
+
+		<form id="formConsulta">
+			<div class="seccion-form">
+				<div class="consulta-dni">
+					<div class="campo-form">
+						<label for="dniConsulta">DNI</label>
+						<input type="text" id="dniConsulta" name="dniConsulta" maxlength="8" inputmode="numeric" placeholder="Ej. 70123456" required>
+					</div>
+					<button type="submit" class="btn-consultar">Consultar</button>
+				</div>
+				<div id="mensaje-form"></div>
+			</div>
+		</form>
+
+		<!-- ============ ESTADO: APROBADO ============ -->
+		<div class="resultado-consulta resultado-bien" id="resultado-bien">
+			<div class="resultado-fila">
+				<img class="osofeli" src="osofeli.png" alt="Oso feliz">
+				<div class="resultado-texto">
+					<h3>¡Todo listo, <span id="nombre-bien">—</span>!</h3>
+					<p>Tu inscripción está en estado <strong>Aprobado</strong>. Ya quedaste registrado para EXPOBIO 2026.</p>
+				</div>
+			</div>
+			<div class="bloque-whatsapp-form">
+				<p>Únete al grupo de WhatsApp del evento para recibir avisos y novedades:</p>
+				<img src="https://files.catbox.moe/nkxwii.png" alt="QR grupo de WhatsApp">
+				<br>
+				<a class="btn-whatsapp-form" href="https://chat.whatsapp.com/Cix0z7MfklF2IRO6JGSNrm?s=qt&p=a&mlu=1" target="_blank" rel="noopener">
+					📲 Unirme al grupo de WhatsApp
+				</a>
+			</div>
+		</div>
+
+		<!-- ============ ESTADO: RECHAZADO ============ -->
+		<div class="resultado-consulta resultado-mal" id="resultado-mal">
+			<div class="resultado-fila">
+				<img class="osotite" src="osotite.png" alt="Oso triste">
+				<div class="resultado-texto">
+					<h3>Hola, <span id="nombre-mal">—</span></h3>
+					<p>Tu inscripción está en estado <strong>Rechazado</strong>.</p>
+					<p id="motivo-mal">Motivo: —</p>
+					<p>Comunícate con nosotros para más información:</p>
+					<span class="contacto-rechazo">📞 974 219 789</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- ============ ESTADO: PENDIENTE ============ -->
+		<div class="resultado-consulta resultado-pendiente" id="resultado-pendiente">
+			<div class="resultado-fila">
+				<img class="osocansao" src="osocansao.png" alt="Oso esperando">
+				<div class="resultado-texto">
+					<h3>Hola, <span id="nombre-pendiente">—</span></h3>
+					<p>Tu inscripción está en estado <strong>Pendiente</strong>.</p>
+					<p>Sé paciente, estamos procesando tu inscripción. Te avisaremos apenas se confirme.</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- ============ ESTADO: NO EXISTE ============ -->
+		<div class="resultado-consulta resultado-no-existe" id="resultado-no-existe">
+			<div class="resultado-fila">
+				<img class="osowebon" src="osowebon.png" alt="Oso confundido">
+				<div class="resultado-texto">
+					<p class="texto-no-existe">NO ESTÁS INSCRITO</p>
+					<p>No encontramos ninguna inscripción con ese DNI. Elige tu tipo de inscripción para registrarte:</p>
+				</div>
+			</div>
+			<div class="botones-no-existe">
+				<button class="btn-opcion-inscripcion" onclick="window.top.location.href='https://expobio.github.io/INSCRIPCION/datosEstudiante.html'">Estudiante</button>
+				<button class="btn-opcion-inscripcion" onclick="window.top.location.href='https://expobio.github.io/INSCRIPCION/datosGrupo.html'">Grupo de 10</button>
+				<button class="btn-opcion-inscripcion" onclick="window.top.location.href='https://expobio.github.io/INSCRIPCION/datosEgresado.html'">Egresado</button>
+			</div>
+		</div>
+	</div>
+	<script src="consultaEstado.js"></script>
+</body>
+</html>
