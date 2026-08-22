@@ -32,20 +32,7 @@ function doPost(e) {
       return respond({ ok: false, mensaje: 'DNI inválido' });
     }
 
-    // 1) ¿Está inscrito como participante?
-    const inscrito = buscarUltimaPorDNI(dni);
-    if (inscrito) {
-      return respond({
-        ok: true,
-        encontrado: true,
-        tipo: 'inscrito',
-        estado: inscrito.estado || 'pendiente',
-        motivoRechazo: inscrito.motivoRechazo || null,
-        nombres: inscrito.nombres || null
-      });
-    }
-
-    // 2) ¿Es organizador?
+    // 1) ¿Es organizador? (prioridad sobre inscripción normal)
     const org = buscarOrganizadorPorDNI(dni);
     if (org) {
       const idOrganizador = asegurarIdOrganizador(org.fila);
@@ -59,6 +46,19 @@ function doPost(e) {
         codigo: org.codigo || null,
         comision: org.comision || null,
         idOrganizador: idOrganizador
+      });
+    }
+
+    // 2) ¿Está inscrito como participante?
+    const inscrito = buscarUltimaPorDNI(dni);
+    if (inscrito) {
+      return respond({
+        ok: true,
+        encontrado: true,
+        tipo: 'inscrito',
+        estado: inscrito.estado || 'pendiente',
+        motivoRechazo: inscrito.motivoRechazo || null,
+        nombres: inscrito.nombres || null
       });
     }
 
