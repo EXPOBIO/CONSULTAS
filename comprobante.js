@@ -101,7 +101,7 @@ async function descargarComprobante(data) {
     const logoY = 95;
     ctx.beginPath();
     ctx.roundRect(logoX - padLogo, logoY - padLogo, escudoW + padLogo * 2, escudoH + padLogo * 2, 18);
-    ctx.fillStyle = '#141414';
+    ctx.fillStyle = 'rgba(20, 20, 20, 0.78)';
     ctx.fill();
     ctx.drawImage(escudo, logoX, logoY, escudoW, escudoH);
 
