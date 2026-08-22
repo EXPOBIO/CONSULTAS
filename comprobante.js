@@ -7,7 +7,7 @@
  */
 const COMPROBANTE_W = 1414;
 const COMPROBANTE_H = 1000;
-const VERDE = '#234F40';
+const VERDE = '#4E7D6A';
 const AMBAR = '#8a5a00';
 
 function cargarImagen(src) {
@@ -83,9 +83,12 @@ async function descargarComprobante(data) {
     cv.height = COMPROBANTE_H;
     const ctx = cv.getContext('2d');
 
-    // ---- Fondo transparente + marco doble institucional ----
+    // ---- Fondo blanco + marco doble discreto ----
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, COMPROBANTE_W, COMPROBANTE_H);
+
     ctx.strokeStyle = VERDE;
-    ctx.lineWidth = 14;
+    ctx.lineWidth = 9;
     ctx.strokeRect(28, 28, COMPROBANTE_W - 56, COMPROBANTE_H - 56);
     ctx.lineWidth = 3;
     ctx.strokeRect(58, 58, COMPROBANTE_W - 116, COMPROBANTE_H - 116);
