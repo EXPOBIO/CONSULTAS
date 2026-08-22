@@ -31,7 +31,7 @@ async function consultarEstado(dni) {
 }
 
 function ocultarTodosLosResultados() {
-  ['resultado-bien', 'resultado-mal', 'resultado-pendiente', 'resultado-no-existe']
+  ['resultado-bien', 'resultado-mal', 'resultado-pendiente', 'resultado-organizador', 'resultado-no-existe']
     .forEach(id => document.getElementById(id).classList.remove('visible'));
 }
 
@@ -43,6 +43,14 @@ function mostrarResultado(data) {
 
   if (!data.encontrado) {
     document.getElementById('resultado-no-existe').classList.add('visible');
+    return;
+  }
+
+  if (data.tipo === 'organizador') {
+    document.getElementById('nombre-org').textContent = data.nombres || '';
+    document.getElementById('comision-org').textContent = data.comision || 'Equipo organizador';
+    document.getElementById('idorg-org').textContent = data.idOrganizador || '';
+    document.getElementById('resultado-organizador').classList.add('visible');
     return;
   }
 

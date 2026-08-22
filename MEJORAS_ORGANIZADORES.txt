@@ -1,0 +1,175 @@
+========================================================================
+ MEJORAS - CONSULTA DE ORGANIZADORES | EXPOBIO 2026
+ Repo: EXPOBIO/CONSULTAS  ·  Frontend: consultaEstado.js + index.html
+ Backend: Google Apps Script (Web App) + Hoja "Organizadores"
+========================================================================
+
+------------------------------------------------------------------------
+1. QUÉ SE QUIERE (confirmación de entendimiento)
+------------------------------------------------------------------------
+Hoy el sistema solo consulta la hoja "Inscripciones". Si el DNI no está,
+el frontend muestra "NO ESTÁS INSCRITO" y los botones para registrarse.
+
+Se pide:
+  a) Cuando el DNI NO se encuentre en "Inscripciones", el backend debe
+     revisar una NUEVA hoja llamada "Organizadores".
+  b) Si el DNI SÍ está en "Organizadores", mostrar una tarjeta nueva con
+     el oso organizador (oso_organizador.png, ya está en el repo),
+     indicando nombre y comisión (columna "Organizador").
+  c) La columna ID de esa hoja está vacía (el formulario de Google no la
+     llena). Al momento de la PRIMERA consulta que encuentre al
+     organizador, el script debe GENERAR un ID único y ESCRIBIRLO en su
+     fila, para que quede registrado de forma permanente.
+  d) Objetivo final: ese ID servirá a futuro para generarles un
+     COMPROBANTE/CONSTANCIA de organización (igual que los inscritos
+     normales tienen el suyo).
+
+Flujo resultante:
+  DNI -> ¿está en Inscripciones? --sí--> tarjeta normal (como hoy)
+                |
+                no
+                v
+        ¿está en Organizadores? --no--> tarjeta "NO ESTÁS INSCRITO"
+                |
+                sí --> generar/asignar ID (si no tiene)
+                    -> guardar ID en la hoja
+                    -> responder tipo:'organizador'
+                    -> tarjeta de organizador con oso_organizador.png
+
+Estructura de la hoja "Organizadores" (encabezados en fila 1):
+  ID | Marca temporal | Dirección de correo electrónico | Nombres |
+  Apellido Paterno | Apellido Materno | Código | DNI | Celular |
+  Organizador        <- comisión/ej: "Actas y Archivos"
+
+------------------------------------------------------------------------
+2. CAMBIOS EN EL BACKEND (Apps Script .gs)
+------------------------------------------------------------------------
+2.1 Configuración nueva:
+      const ORG_SHEET_NAME = 'Organizadores';
+
+2.2 Nueva función buscarOrganizadorPorDNI(dni):
+      - Igual estilo que buscarUltimaPorDNI(): localizar columnas por
+        nombre de encabezado (headers.indexOf), NO por posición fija.
+      - Columnas necesarias: 'ID', 'DNI', 'Nombres',
+        'Apellido Paterno', 'Apellido Materno', 'Código',
+        'Organizador'.
+      - Buscar la última coincidencia (de abajo hacia arriba).
+
+2.3 Generación del ID (solo si la celda ID está vacía):
+      - Formato sugerido:  ORG-0001, ORG-0002, ... (secuencial).
+      - Calcularlo como máximo de IDs existentes + 1 (no usar número de
+        fila, porque si borran/ordenan filas se rompería).
+      - USAR LockService ANTES de leer-maximo-y-escribir, para que dos
+        consultas simultáneas no reciban el mismo ID:
+
+          const lock = LockService.getScriptLock();
+          lock.waitLock(10000);
+          try {
+            // releer la celda ID (por si otro proceso ya la llenó),
+            // generar ID, setValues en la celda exacta
+          } finally {
+            lock.releaseLock();
+          }
+
+      - Escribir en la celda puntual: sheet.getRange(fila, idCol+1)
+        .setValue(nuevoId). No reescribir toda la hoja.
+
+2.4 Respuesta JSON nueva (contrato con el frontend):
+      {
+        ok: true,
+        encontrado: true,
+        tipo: 'organizador',
+        estado: null,
+        motivoRechazo: null,
+        nombres: 'Nombre Apellidos',
+        codigo: '231212',            // código universitario (si existe)
+        comision: 'Actas y Archivos',
+        idOrganizador: 'ORG-0007'
+      }
+    Los inscritos normales seguirán respondiendo tipo:'inscrito'
+    (agregar ese campo para distinguir; el JS viejo no se rompe porque
+    ignora campos nuevos).
+
+2.5 Orden en doPost():
+      1) validar DNI
+      2) buscarUltimaPorDNI()  -> si hay, responder inscrito (como hoy)
+      3) buscarOrganizadorPorDNI() -> si hay, asignar ID y responder
+         organizador
+      4) si nada -> { ok:true, encontrado:false, ... }
+
+------------------------------------------------------------------------
+3. CAMBIOS EN EL FRONTEND
+------------------------------------------------------------------------
+3.1 consultaEstado.js
+      - En mostrarResultado(data): antes del if (!data.encontrado),
+        agregar rama:
+          if (data.tipo === 'organizador') { pintar tarjeta organizador }
+      - Nuevos spans a llenar: #nombre-org, #comision-org,
+        #idorg-org (y opcionalmente #codigo-org).
+      - Agregar 'resultado-organizador' a ocultarTodosLosResultados().
+      - El mensaje del botón/estado no cambia.
+
+3.2 index.html
+      - Nueva tarjeta entre PENDIENTE y NO EXISTE:
+          id="resultado-organizador", clase resultado-consulta +
+          clase propia (ej. resultado-org).
+          Imagen: oso_organizador.png (ya existe en el repo).
+          Texto sugerido:
+            h3: ¡Hola, <span id="nombre-org">—</span>!
+            p:  Eres parte del equipo organizador de EXPOBIO 2026.
+            p:  Comisión: <strong id="comision-org">—</strong>
+            p:  Tu código de organizador es:
+                <strong id="idorg-org">—</strong>  (consérvalo, con esto
+                podrás reclamar tu constancia).
+      - IMPORTANTE: cuando salga esta tarjeta, NO deben verse los
+        botones de inscripción (Estudiante/Grupo/Egresado); esos viven
+        solo dentro de resultado-no-existe, así que basta con ocultar
+        todas las tarjetas y mostrar solo la de organizador.
+
+3.3 consultaEstado.css
+      - Estilo para .resultado-org (puede clonar el patrón de
+        .resultado-bien: fondo verde suave/borde verde).
+      - Ajustar tamaño de la imagen del oso (misma clase .osofeli u
+        otra similar).
+
+------------------------------------------------------------------------
+4. CASOS BORDE A DECIDIR/CUBRIR
+------------------------------------------------------------------------
+  [ ] Persona inscrita Y organizadora a la vez: con este flujo gana
+      "Inscripciones" (se muestra como inscrito normal). Confirmar si
+      eso está bien o si un organizador inscrito debería ver ambas.
+  [ ] DNI duplicado dentro de "Organizadores": se toma la última fila.
+  [ ] Fila sin ID y dos personas consultando a la vez: cubierto por
+      LockService (releer dentro del lock).
+  [ ] Si cambian los encabezados de la hoja, indexOf devuelve -1:
+      validar y lanzar error claro ("falta columna X").
+  [ ] Quitar el campo debug:String(err) de la respuesta de error en
+      producción (expone internals a cualquiera).
+
+------------------------------------------------------------------------
+5. ORDEN DE TRABAJO PROPUESTO
+------------------------------------------------------------------------
+  Paso 1. Verificar en el Spreadsheet que exista la hoja "Organizadores"
+          con EXACTAMENTE esos encabezados (mismo spreadsheet que
+          Inscripciones; si es otro archivo, agregar su SPREADSHEET_ID).
+  Paso 2. Decidir formato de ID (propuesto ORG-0001) y prioridad
+          inscrito-vs-organizador (caso borde 1).
+  Paso 3. Actualizar el .gs (hoja, búsqueda, ID con lock, respuesta).
+  Paso 4. Probar el backend solo: Deploy > probar web app (url /dev) con
+          curl o el probador de Apps Script, verificando:
+            - DNI inscito -> inscrito
+            - DNI organizador sin ID -> crea ORG-XXXX en la hoja
+            - segunda consulta del mismo DNI -> mismo ID (no duplica)
+            - DNI inexistente -> encontrado:false
+  Paso 5. Actualizar index.html + consultaEstado.js + css.
+  Paso 6. Prueba integral desde GitHub Pages y nuevo deploy (/exec).
+  Paso 7. Commit y push del repo CONSULTAS.
+
+------------------------------------------------------------------------
+6. NOTA PARA EL COMPROBANTE A FUTURO
+------------------------------------------------------------------------
+El idOrganizador queda persistido en la hoja, así que cualquier script
+futuro de constancias puede tomar la fila completa (nombre, comisión,
+ID) usando el ID como llave. No hace falta cambiar más nada ahora.
+
+========================================================================

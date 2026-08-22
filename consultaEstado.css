@@ -763,6 +763,25 @@ border: 1px solid rgba(255, 138, 101, 0.4);
     background: rgba(255, 235, 59, 0.08);
 }
 
+.resultado-org {
+    border-left: 4px solid #ffb300;
+    background: rgba(255, 179, 0, 0.08);
+}
+
+.id-organizador {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 179, 0, 0.18);
+    border: 1px solid rgba(255, 179, 0, 0.45);
+    font-family: monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
 .resultado-no-existe {
     border-left: 4px solid #ff5252;
     background: rgba(185, 39, 14, 0.16);
