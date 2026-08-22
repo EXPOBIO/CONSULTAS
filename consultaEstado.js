@@ -47,6 +47,7 @@ function mostrarResultado(data) {
   }
 
   if (data.tipo === 'organizador') {
+    window._organizadorData = data;
     document.getElementById('nombre-org').textContent = data.nombres || '';
     document.getElementById('comision-org').textContent = data.comision || 'Equipo organizador';
     document.getElementById('idorg-org').textContent = data.idOrganizador || '';
