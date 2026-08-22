@@ -155,6 +155,11 @@ async function descargarComprobante(data) {
       '700 34px monospace', '#ffffff'
     );
 
+    y += 62;
+    ctx.fillStyle = '#555555';
+    ctx.font = '22px Arial';
+    ctx.fillText('Presenta este comprobante para inscribirte en los concursos de EXPOBIO 2026.', COMPROBANTE_W / 2, y);
+
     // ---- Oso organizador decorativo (abajo derecha) ----
     const osoH = 215;
     const osoW = osoH * oso.width / oso.height;

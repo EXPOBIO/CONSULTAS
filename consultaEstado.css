@@ -789,6 +789,13 @@ border: 1px solid rgba(255, 138, 101, 0.4);
     text-align: center;
 }
 
+.nota-comprobante {
+    font-size: 0.82rem;
+    color: #cfd8d6;
+    line-height: 1.5;
+    margin: 0 0 14px;
+}
+
 .btn-comprobante {
     background: #ffb300;
     color: #1a1a1a;
