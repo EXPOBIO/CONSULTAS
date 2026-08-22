@@ -93,10 +93,17 @@ async function descargarComprobante(data) {
     ctx.lineWidth = 3;
     ctx.strokeRect(58, 58, COMPROBANTE_W - 116, COMPROBANTE_H - 116);
 
-    // ---- Escudo universitario arriba ----
+    // ---- Escudo universitario arriba (cuadro negro redondeado para contraste) ----
     const escudoW = 340;
     const escudoH = escudoW * escudo.height / escudo.width;
-    ctx.drawImage(escudo, (COMPROBANTE_W - escudoW) / 2, 95, escudoW, escudoH);
+    const padLogo = 24;
+    const logoX = (COMPROBANTE_W - escudoW) / 2;
+    const logoY = 95;
+    ctx.beginPath();
+    ctx.roundRect(logoX - padLogo, logoY - padLogo, escudoW + padLogo * 2, escudoH + padLogo * 2, 18);
+    ctx.fillStyle = '#141414';
+    ctx.fill();
+    ctx.drawImage(escudo, logoX, logoY, escudoW, escudoH);
 
     // ---- Títulos ----
     ctx.textAlign = 'center';
