@@ -21,12 +21,24 @@ async function consultarEstado(dni) {
       data = JSON.parse(rawText);
     } catch (parseErr) {
       console.error('No se pudo parsear como JSON:', parseErr, rawText);
-      return { ok: false, mensaje: 'El servidor no devolvió JSON válido' };
+      return { ok: false, mensaje: 'El servidor no devolvió JSON válido', tipoError: 'JSON_INVALIDO', detalle: rawText.slice(0, 500) };
+    }
+
+    // Si el backend devolvió debug, lo exponemos para diagnóstico
+    if (data && !data.ok && data.debug) {
+      console.error('Error de backend:', data.debug);
+      return {
+        ok: false,
+        mensaje: data.mensaje || 'Error interno',
+        tipoError: 'BACKEND',
+        detalle: data.debug
+      };
     }
     return data;
   } catch (err) {
     console.error('Error de fetch:', err);
-    return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo' };
+    const tipo = err instanceof TypeError ? 'RED' : 'DESCONOCIDO';
+    return { ok: false, mensaje: 'No se pudo conectar, intenta de nuevo', tipoError: tipo, detalle: String(err) };
   }
 }
 
@@ -94,7 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!data.ok) {
       mensajeForm.className = 'error';
-      mensajeForm.textContent = data.mensaje;
+      mensajeForm.textContent = data.mensaje || 'Error de consulta';
+      if (data.detalle) {
+        const detalle = document.createElement('div');
+        detalle.className = 'detalle-error';
+        detalle.textContent = '[' + (data.tipoError || '?') + '] ' + data.detalle;
+        mensajeForm.appendChild(detalle);
+      }
       return;
     }
 

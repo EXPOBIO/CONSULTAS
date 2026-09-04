@@ -585,6 +585,16 @@ color: #ffcdc0;
 border: 1px solid rgba(255, 138, 101, 0.4);
 }
 
+.detalle-error {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 205, 192, 0.4);
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #ffb4a1;
+    word-break: break-all;
+}
+
 .campo-invalido-form {
     border-color: #ff8a65 !important;
     box-shadow: 0 0 0 1px #ff8a65;
