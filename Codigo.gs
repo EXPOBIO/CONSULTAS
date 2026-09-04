@@ -21,9 +21,15 @@ const PAD_ID_ORG = 4; // ORG-0001
 // Poner en false cuando pase a producción (el campo debug expone internals)
 const DEBUG = true;
 
+// ==================== HELPERS DE LOG ====================
+function log(msg) {
+  try { console.log(msg); } catch (e) {}
+}
+
 // ==================== ENTRY POINT ====================
 function doPost(e) {
   try {
+    log('doPost recibido: body=' + JSON.stringify(e && e.postData && e.postData.contents));
     const body = parseBody(e);
 
     // Validar formato de DNI (8 dígitos)
@@ -33,8 +39,11 @@ function doPost(e) {
     }
 
     // 1) ¿Es organizador? (prioridad sobre inscripción normal)
+    log('Buscando en ' + ORG_SHEET_NAME + ' DNI=' + dni);
     const org = buscarOrganizadorPorDNI(dni);
+    log('Resultado organizador: ' + JSON.stringify(org));
     if (org) {
+      log('Asignando ID para fila ' + org.fila);
       const idOrganizador = asegurarIdOrganizador(org.fila);
       return respond({
         ok: true,
@@ -50,7 +59,9 @@ function doPost(e) {
     }
 
     // 2) ¿Está inscrito como participante?
+    log('Buscando en ' + SHEET_NAME + ' DNI=' + dni);
     const inscrito = buscarUltimaPorDNI(dni);
+    log('Resultado inscrito: ' + JSON.stringify(inscrito));
     if (inscrito) {
       return respond({
         ok: true,
@@ -72,8 +83,10 @@ function doPost(e) {
     });
 
   } catch (err) {
+    log('ERROR en doPost: ' + String(err));
     const resp = { ok: false, mensaje: 'Error interno' };
     if (DEBUG) resp.debug = String(err);
+    else resp.debug = 'DEBUG desactivado en producción';
     return respond(resp);
   }
 }
@@ -158,6 +171,7 @@ function buscarOrganizadorPorDNI(dni) {
 
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
+  log('Encabezados Organizadores: ' + JSON.stringify(headers));
 
   const colDni = requerirColumna(headers, 'DNI');
   const colNombres = requerirColumna(headers, 'Nombres');
@@ -196,6 +210,7 @@ function asegurarIdOrganizador(fila) {
     const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(ORG_SHEET_NAME);
     const lastCol = sheet.getLastColumn();
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    log('Encabezados para ID: ' + JSON.stringify(headers));
     const colIdx = requerirColumna(headers, 'ID');
 
     // Releer dentro del lock: otro proceso pudo asignarlo ya
